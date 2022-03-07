@@ -30,6 +30,13 @@ function(author) {
   as.data.frame(reviews_collection$find(paste0('{"author" : "', author,'" }')))
 }
 
+#* Returns all Reviews from a specific user
+#* @param course user who wrote reviews
+#* @get /allReviewsByCourse
+function(course) {
+  as.data.frame(reviews_collection$find(paste0('{"course" : "', course,'" }')))
+}
+
 #* Returns countries that satisfy condition
 #* @param course the class that this review is for 
 #* @param author user who wrote review
@@ -37,7 +44,7 @@ function(author) {
 #* @param description what the user wrote
 #* @get /uploadReview
 function(course, author, numStars, description) {
-  val <- data.frame(course, author, numStars, description, stringsAsFactors=FALSE)
+  val <- data.frame(course, author, numStars = strtoi(numStars, base=0L), description, stringsAsFactors=FALSE)
   
   reviews_collection$insert(val)
   
@@ -50,7 +57,7 @@ function(course, author, numStars, description) {
 #* @param description what the user wrote
 #* @post /uploadReview
 function(course, author, numStars, description) {
-  val <- data.frame(course, author, numStars, description, stringsAsFactors=FALSE)
+  val <- data.frame(course, author, numStars = strtoi(numStars, base=0L), description, stringsAsFactors=FALSE)
   
   reviews_collection$insert(val)
   
