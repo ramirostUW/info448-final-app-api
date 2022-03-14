@@ -1,4 +1,4 @@
-my_packages = c('plumber', 'mongolite')
+my_packages = c('plumber', 'mongolite', 'dplyr')
 install_if_missing = function(p) {
   if (p %in% rownames(installed.packages()) == FALSE) {
     install.packages(p, dependencies = TRUE)

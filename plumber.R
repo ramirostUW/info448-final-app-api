@@ -1,4 +1,5 @@
 library(plumber)
+library(dplyr)
 library(mongolite)
 
 
@@ -6,7 +7,7 @@ connection_string = 'mongodb+srv://info448finalapp:info448finalapp@cluster0.x7en
 classes_collection = mongo(collection="classes", db="finalApp", url=connection_string)
 reviews_collection = mongo(collection="reviews", db="finalApp", url=connection_string)
 comments_collection = mongo(collection="comments", db="finalApp", url=connection_string)
-isProfessor_collection = mongo(collection="isProfessor", 
+isStudent_collection = mongo(collection="isStudent", 
                                db="finalApp", url=connection_string)
 
 
@@ -16,7 +17,15 @@ isProfessor_collection = mongo(collection="isProfessor",
 #* Returns all classes
 #* @get /allClasses
 function() {
-  as.data.frame(classes_collection$find())
+  #as.data.frame(classes_collection$find())
+  ratings <- as.data.frame(reviews_collection$find()) %>% group_by(course) %>% summarize_at(vars(numStars), mean)
+  colnames(ratings) <- c('classCode', 'avgStars')
+  returnVal <- as.data.frame(classes_collection$find())
+  returnVal <- left_join(returnVal, ratings, by = "classCode")
+  
+  returnVal[is.na(returnVal$avgStars),]$avgStars <- 0
+  
+  returnVal
 }
 
 
@@ -109,4 +118,48 @@ function(reviewCourse,reviewAuthor, commentAuthor, comment) {
   
   comments_collection$insert(val)
   val
+}
+
+#* Registers the student status of a user
+#* @param user email for this User
+#* @param role role of this user
+#* @get /registerUserStatus
+function(user, role) {
+  
+  statusString <- 'false'
+  if(role == 'student')
+    statusString <- 'true'
+  isStudent_collection$update(paste0('{"user":"', user, '"}'), 
+                              paste0('{"$set":{"isStudent":', statusString, '}}'), 
+                              upsert = TRUE)
+  
+  return("success")
+}
+
+#* Registers the student status of a user
+#* @param user email for this User
+#* @param role role of this user
+#* @post /registerUserStatus
+function(user, role) {
+  
+  statusString <- 'false'
+  if(role == 'student')
+    statusString <- 'true'
+  isStudent_collection$update(paste0('{"user":"', user, '"}'), 
+                              paste0('{"$set":{"isStudent":', statusString, '}}'), 
+                              upsert = TRUE)
+  
+  return("success")
+}
+
+#* Check whether a user is a student
+#* @param user email for this User
+#* @get /isStudent
+function(user) {
+  db_results <- as.data.frame(isStudent_collection$find(paste0('{"user" : "', user,'" }')))
+  returnVal <- FALSE
+  if(count(db_results) > 0)
+    returnVal <- db_results[1,2]
+  
+  returnVal
 }
